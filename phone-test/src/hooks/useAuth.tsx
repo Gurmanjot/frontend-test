@@ -1,7 +1,6 @@
-import { createContext, useContext, useMemo, useState } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 import { useNavigate, Outlet } from 'react-router-dom';
 import { LOGIN } from '../gql/mutations';
-import { useLocalStorage } from './useLocalStorage';
 import { useMutation } from '@apollo/client';
 
 const AuthContext = createContext({
@@ -14,10 +13,6 @@ export interface AuthPRoviderProps {
 }
 
 export const AuthProvider = () => {
-  const [user, setUser] = useState();
-  const [status, setStatus] = useState('loading');
-  const [accessToken, setAccessToken] = useLocalStorage('access_token', undefined);
-  const [refreshToken, setRefreshToken] = useLocalStorage('refresh_token', undefined);
   const [loginMutation] = useMutation(LOGIN);
   const navigate = useNavigate();
 
@@ -27,19 +22,16 @@ export const AuthProvider = () => {
       variables: { input: { username, password } },
       onCompleted: ({ login }: any) => {
         const { access_token, refresh_token, user } = login;
-        setAccessToken(access_token);
-        setRefreshToken(refresh_token);
-        setUser(user);
-        console.log('redirect to calls');
-        navigate('/calls');
+        localStorage.setItem('access_token', JSON.stringify(access_token));
+        localStorage.setItem('refresh_token', JSON.stringify(refresh_token));
+        localStorage.setItem('username', JSON.stringify(user));
       }
     });
   };
 
   // call this function to sign out logged in user
   const logout = () => {
-    setAccessToken(null);
-    setRefreshToken(null);
+    window.localStorage.clear();
     navigate('/login', { replace: true });
   };
 
@@ -49,6 +41,7 @@ export const AuthProvider = () => {
       logout
     };
   }, []);
+
   return (
     <AuthContext.Provider value={value}>
       <Outlet />

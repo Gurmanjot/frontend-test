@@ -1,4 +1,12 @@
-export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  // TODO check that the user is authenticated before displaying the route
-  return <>{children}</>;
+import { Navigate } from 'react-router-dom';
+import { ProtectedLayout } from './ProtectedLayout';
+
+export const ProtectedRoute = () => {
+  const accessToken = localStorage.getItem('access_token');
+
+  if (!accessToken) {
+    return <Navigate to={'/login'} replace />;
+  }
+
+  return <ProtectedLayout />;
 };

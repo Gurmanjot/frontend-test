@@ -5,6 +5,7 @@ export const GlobalAppStyle = createGlobalStyle`
     overflow: hidden;
     width: 100%;
     height: 100%;
+    overflow-y: scroll
   }
 
   body {

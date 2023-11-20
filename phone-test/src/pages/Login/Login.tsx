@@ -14,11 +14,20 @@ export const LoginPage = () => {
   const [formState, setFormState] = React.useState<FormState>('Idle');
   const { showToast, removeToast } = useToast();
   const navigate = useNavigate();
+  const accessToken = localStorage.getItem('access_token');
+
+  React.useEffect(() => {
+    if (accessToken) {
+      navigate('/calls', { replace: true });
+    }
+  }, [accessToken]);
 
   const onSubmit = async (email: string, password: string) => {
     try {
       setFormState('Pending');
       await login({ username: email, password });
+
+      navigate('/calls');
       removeToast(LOGIN_REJECTED);
     } catch (error) {
       console.log(error);
