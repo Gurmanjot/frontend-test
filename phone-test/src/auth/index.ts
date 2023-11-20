@@ -1,9 +1,9 @@
-import { ApolloClient, InMemoryCache } from '@apollo/client';
-import { authLink, httpLink } from './links';
+import { ApolloClient, InMemoryCache, from } from '@apollo/client';
+import { errorLink, splitLink } from './links';
 
 const client = new ApolloClient({
   cache: new InMemoryCache(),
-  link: authLink.concat(httpLink)
+  link: from([errorLink, splitLink])
 });
 
 export default client;

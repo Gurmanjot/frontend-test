@@ -1,4 +1,4 @@
-import { useQuery } from '@apollo/client';
+import { useQuery, useSubscription } from '@apollo/client';
 import styled from 'styled-components';
 import { PAGINATED_CALLS } from '../../gql/queries';
 import { Typography, Spacer, Pagination, Button } from '@aircall/tractor';
@@ -8,6 +8,7 @@ import CallItem from './CallItem';
 import FilterComponent from './filterComponent';
 import { getGroupedItems } from './utils';
 import { CallDictionary } from './utils/type';
+import { SUBSCRIPTION_QUERY } from '../../gql/subscriptions';
 
 export const PaginationWrapper = styled.div`
   > div {
@@ -25,11 +26,18 @@ export const CallsListPage = () => {
   const [calls, setCalls] = useState([]);
 
   const [sortByDate, setSortByDate] = useState(false);
+  const [showArchivedCall, setShowArchivedCall] = useState(false);
   const [search] = useSearchParams();
   const navigate = useNavigate();
   const pageQueryParams = search.get('page');
   const [typeFilter, setTypeFilter] = useState<null | string>(null);
   const [directionFilter, setDirectionFilter] = useState<null | string>(null);
+
+  const {
+    data: subData,
+    error: subError,
+    loading: subLoading
+  } = useSubscription(SUBSCRIPTION_QUERY);
 
   const activePage = !!pageQueryParams ? parseInt(pageQueryParams) : 1;
   const { loading, error, data } = useQuery(PAGINATED_CALLS, {
@@ -45,7 +53,8 @@ export const CallsListPage = () => {
   const filteredCalls = calls.filter((call: Call) => {
     return (
       (!typeFilter || call.call_type === typeFilter) &&
-      (!directionFilter || call.direction === directionFilter)
+      (!directionFilter || call.direction === directionFilter) &&
+      call.is_archived === showArchivedCall
     );
   });
 
@@ -80,6 +89,13 @@ export const CallsListPage = () => {
         }}
       >
         {sortByDate ? 'Reset Date Filter' : 'Sort By Date'}
+      </Button>
+      <Button
+        onClick={() => {
+          setShowArchivedCall(value => !value);
+        }}
+      >
+        {showArchivedCall ? 'Show UnArchived Calls' : 'Show Archived Calls'}
       </Button>
       <Spacer space="s" direction="vertical" justifyItems="center">
         {filteredCalls.length === 0 ? (

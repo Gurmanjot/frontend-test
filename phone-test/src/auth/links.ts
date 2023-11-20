@@ -2,8 +2,12 @@ import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 import { getRefreshToken } from './refreshToken';
 import { HttpLink } from '@apollo/client';
+import { split } from '@apollo/client';
+import { getMainDefinition } from '@apollo/client/utilities';
+import { SubscriptionClient } from 'subscriptions-transport-ws';
+import { WebSocketLink } from '@apollo/client/link/ws';
 
-export const authLink = setContext((_, { headers }) => {
+const authLink = setContext((_, { headers }) => {
   const accessToken = localStorage.getItem('access_token');
   let parsedToken = accessToken ? JSON.parse(accessToken) : undefined;
 
@@ -15,9 +19,24 @@ export const authLink = setContext((_, { headers }) => {
   };
 });
 
-export const httpLink = new HttpLink({
+const httpLink = new HttpLink({
   uri: 'https://frontend-test-api.aircall.dev/graphql'
 });
+
+const websocketLink = new WebSocketLink(
+  new SubscriptionClient('wss://frontend-test-api.aircall.dev/websocket', {
+    lazy: true,
+    reconnect: true,
+    connectionParams: () => {
+      const accessToken = localStorage.getItem('access_token');
+      let parsedToken = accessToken ? JSON.parse(accessToken) : undefined;
+
+      return {
+        authorization: accessToken ? `Bearer ${parsedToken}` : ''
+      };
+    }
+  })
+);
 
 export const errorLink = onError(({ graphQLErrors, operation }) => {
   if (graphQLErrors) {
@@ -42,3 +61,12 @@ export const errorLink = onError(({ graphQLErrors, operation }) => {
     });
   }
 });
+
+export const splitLink = split(
+  ({ query }) => {
+    const definition = getMainDefinition(query);
+    return definition.kind === 'OperationDefinition' && definition.operation === 'subscription';
+  },
+  websocketLink,
+  authLink.concat(httpLink)
+);

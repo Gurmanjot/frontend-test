@@ -4,10 +4,13 @@ import {
   Typography,
   Box,
   DiagonalDownOutlined,
-  DiagonalUpOutlined
+  DiagonalUpOutlined,
+  Button
 } from '@aircall/tractor';
 import { formatDate, formatDuration } from '../../helpers/dates';
 import { useNavigate } from 'react-router-dom';
+import { useMutation } from '@apollo/client';
+import { ARCHIVE_CALL } from '../../gql/mutations/archiveCall';
 
 const CallItem = ({ call }: { call: Call }) => {
   const icon = call.direction === 'inbound' ? DiagonalDownOutlined : DiagonalUpOutlined;
@@ -26,6 +29,8 @@ const CallItem = ({ call }: { call: Call }) => {
   const handleCallOnClick = (callId: string) => {
     navigate(`/calls/${callId}`);
   };
+
+  const [archiveCall] = useMutation(ARCHIVE_CALL);
 
   return (
     <Box
@@ -61,6 +66,24 @@ const CallItem = ({ call }: { call: Call }) => {
       </Grid>
       <Box px={4} py={2}>
         <Typography variant="caption">{notes}</Typography>
+      </Box>
+      <Box p={10}>
+        <Button
+          onClick={e => {
+            e.stopPropagation();
+            archiveCall({ variables: { id: call.id } })
+              .then(data => {
+                console.log('archive data', data);
+              })
+              .catch(err => {
+                console.log('error', err);
+              });
+          }}
+          variant={call.is_archived ? 'destructive' : 'instructive'}
+          size="xSmall"
+        >
+          {call.is_archived ? 'Unarchive Call' : ' Archive call'}
+        </Button>
       </Box>
     </Box>
   );
