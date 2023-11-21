@@ -4,12 +4,18 @@ import {
   Typography,
   Box,
   DiagonalDownOutlined,
-  DiagonalUpOutlined
+  DiagonalUpOutlined,
+  Button,
+  useToast
 } from '@aircall/tractor';
 import { formatDate, formatDuration } from '../../helpers/dates';
 import { useNavigate } from 'react-router-dom';
+import { useMutation } from '@apollo/client';
+import { ARCHIVE_CALL } from '../../gql/mutations/archiveCall';
 
 const CallItem = ({ call }: { call: Call }) => {
+  const { showToast } = useToast();
+
   const icon = call.direction === 'inbound' ? DiagonalDownOutlined : DiagonalUpOutlined;
   const title =
     call.call_type === 'missed'
@@ -26,6 +32,8 @@ const CallItem = ({ call }: { call: Call }) => {
   const handleCallOnClick = (callId: string) => {
     navigate(`/calls/${callId}`);
   };
+
+  const [archiveCall] = useMutation(ARCHIVE_CALL);
 
   return (
     <Box
@@ -61,6 +69,32 @@ const CallItem = ({ call }: { call: Call }) => {
       </Grid>
       <Box px={4} py={2}>
         <Typography variant="caption">{notes}</Typography>
+      </Box>
+      <Box p={10}>
+        <Button
+          onClick={e => {
+            e.stopPropagation();
+            archiveCall({ variables: { id: call.id } })
+              .then(() => {
+                showToast({
+                  variant: 'success',
+                  dismissIn: 3000,
+                  message: 'Archive call successful'
+                });
+              })
+              .catch(() => {
+                showToast({
+                  variant: 'error',
+                  dismissIn: 3000,
+                  message: 'Archive call failed'
+                });
+              });
+          }}
+          variant={call.is_archived ? 'destructive' : 'instructive'}
+          size="xSmall"
+        >
+          {call.is_archived ? 'Unarchive Call' : ' Archive call'}
+        </Button>
       </Box>
     </Box>
   );
